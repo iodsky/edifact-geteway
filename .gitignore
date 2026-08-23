@@ -1,6 +1,9 @@
 HELP.md
 .gradle
 build/
+
+### macOS ###
+.DS_Store
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
