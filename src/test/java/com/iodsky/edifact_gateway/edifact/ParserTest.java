@@ -86,18 +86,6 @@ class ParserTest {
             assertEquals(List.of("??"), parser.tokenize("??'"));
         }
 
-        @Test
-        void tokenize_throwsParseException_whenMessageIsEmpty() {
-            ParseException ex = assertThrows(ParseException.class, () -> parser.tokenize(""));
-            assertEquals("EMPTY_INPUT", ex.getCode());
-        }
-
-        @Test
-        void tokenize_throwsParseException_whenMessageIsNull() {
-            ParseException ex = assertThrows(ParseException.class, () -> parser.tokenize(null));
-            assertEquals("EMPTY_INPUT", ex.getCode());
-        }
-
     }
 
     @Nested
@@ -284,6 +272,76 @@ class ParserTest {
             assertTrue(segment.elements().isEmpty());
         }
 
+    }
+
+    @Nested
+    class ParseTests {
+
+        @Test
+        void parse_returnsFullDocument_withoutUna() {
+            EdifactDocument document = Parser.parse(MESSAGE);
+
+            assertNull(document.una());
+            assertEquals("UNB", document.interchange().header().tag());
+            assertEquals(1, document.interchange().messages().size());
+            assertEquals("UNZ", document.interchange().trailer().tag());
+        }
+
+        @Test
+        void parse_returnsFullDocument_withUna_andAppliesCustomDelimiters() {
+            String raw = "UNA|*,~ !UNB*UNOA|3*SENDER*RECEIVER*240816|1200*1!UNH*1*ORDERS|D|96A|UN!BGM*220*ORD001!UNT*3*1!UNZ*1*1!";
+
+            EdifactDocument document = Parser.parse(raw);
+
+            assertEquals("UNA|*,~ !", document.una());
+            assertEquals("UNB", document.interchange().header().tag());
+
+            DataElement first = document.interchange().header().elements().getFirst();
+            CompositeDataElement composite = assertInstanceOf(CompositeDataElement.class, first);
+            assertEquals(List.of("UNOA", "3"), composite.components());
+
+            Message message = document.interchange().messages().getFirst();
+            assertEquals("UNH", message.header().tag());
+            assertEquals("BGM", message.segments().getFirst().tag());
+            assertEquals("UNT", message.trailer().tag());
+
+            assertEquals("UNZ", document.interchange().trailer().tag());
+        }
+
+        @Test
+        void parse_returnsFullDocument_withUnaUsingDefaultDelimiters() {
+            String raw = "UNA:+.? 'UNB+UNOA:3+SENDER+RECEIVER+240816:1200+1'UNH+1+ORDERS:D:96A:UN'BGM+220+ORD001'UNT+3+1'UNZ+1+1'";
+
+            EdifactDocument document = Parser.parse(raw);
+
+            assertEquals("UNA:+.? '", document.una());
+            assertEquals("UNB", document.interchange().header().tag());
+
+            DataElement first = document.interchange().header().elements().getFirst();
+            CompositeDataElement composite = assertInstanceOf(CompositeDataElement.class, first);
+            assertEquals(List.of("UNOA", "3"), composite.components());
+
+            assertEquals(1, document.interchange().messages().size());
+            assertEquals("UNZ", document.interchange().trailer().tag());
+        }
+
+        @Test
+        void parse_throwsInvalidUna_whenUnaIsShorterThanNineChars() {
+            ParseException ex = assertThrows(ParseException.class, () -> Parser.parse("UNA:+.?"));
+            assertEquals("INVALID_UNA", ex.getCode());
+        }
+
+        @Test
+        void parse_throwsParseException_whenMessageIsEmpty() {
+            ParseException ex = assertThrows(ParseException.class, () -> Parser.parse(""));
+            assertEquals("EMPTY_INPUT", ex.getCode());
+        }
+
+        @Test
+        void parse_throwsParseException_whenMessageIsNull() {
+            ParseException ex = assertThrows(ParseException.class, () -> Parser.parse(null));
+            assertEquals("EMPTY_INPUT", ex.getCode());
+        }
     }
 
 }

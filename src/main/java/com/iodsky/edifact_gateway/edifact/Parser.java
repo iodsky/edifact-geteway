@@ -11,18 +11,38 @@ public class Parser {
         this.delimiters = delimiters;
     }
 
-    public List<String> tokenize(String message) {
-
-        if (message == null || message.isEmpty()) {
+    public static EdifactDocument parse(String rawText) {
+        if (rawText == null || rawText.isEmpty()) {
             throw new ParseException("Empty message", "EMPTY_INPUT");
         }
 
+        String una = null;
+        Delimiters d;
+        if (rawText.startsWith("UNA")) {
+            String unaSegment = rawText.length() >= 9 ? rawText.substring(0, 9) : rawText;
+            una = unaSegment;
+            d = Delimiters.fromUna(unaSegment);
+        } else {
+            d = Delimiters.defaults();
+        }
+
+        Parser p = new Parser(d);
+
+        String body = una != null ? rawText.substring(9) : rawText;
+        List<String> tokenized = p.tokenize(body);
+        List<Segment> segments = p.parseSegments(tokenized);
+
+        Interchange interchange = EnvelopeBuilder.build(segments);
+        return new EdifactDocument(una, interchange);
+    }
+
+    List<String> tokenize(String message) {
         String normalized = message.replace("\n", "").replace("\r", "");
 
         return splitDropTrailing(normalized, delimiters.segmentTerminator());
     }
 
-    public List<Segment> parseSegments(List<String> rawSegments) {
+    List<Segment> parseSegments(List<String> rawSegments) {
         List<Segment> segments = new ArrayList<>();
         for (String rawSegment: rawSegments) {
             Segment segment = parseSegment(rawSegment);
@@ -32,7 +52,7 @@ public class Parser {
         return segments;
     }
 
-    public Segment parseSegment(String rawSegment) {
+    Segment parseSegment(String rawSegment) {
 
         List<String> rawElements = split(rawSegment, delimiters.dataElementSeparator());
         String tag = unescape(rawElements.getFirst());
