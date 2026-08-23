@@ -12,7 +12,7 @@ public class EnvelopeBuilder {
         }
 
         if (!segments.getFirst().tag().equals("UNB")) {
-            throw new ParseException("Expected UNB as first segment but found " + segments.getFirst().tag(), "MISSING_UNB");
+            throw new ParseException("Expected UNB as first segment but found " + segments.getFirst().tag(), "MISSING_UNB", 1, null);
         }
 
         final Segment interchangeHeader = segments.getFirst();
@@ -27,7 +27,7 @@ public class EnvelopeBuilder {
             switch (segment.tag()) {
                 case "UNH" -> {
                     if (currentHeader != null) {
-                        throw new ParseException("UNH encountered before previous message was closed with UNT", "UNCLOSED_MESSAGE");
+                        throw new ParseException("UNH encountered before previous message was closed with UNT", "UNCLOSED_MESSAGE", i + 1, null);
                     }
 
                     currentHeader = segment;
@@ -35,7 +35,7 @@ public class EnvelopeBuilder {
                 }
                 case "UNT" -> {
                     if (currentHeader == null) {
-                        throw new ParseException("UNT encountered without a matching UNH", "UNEXPECTED_END");
+                        throw new ParseException("UNT encountered without a matching UNH", "UNEXPECTED_END", i + 1, null);
                     }
 
                     messages.add(new Message(currentHeader, currentSegments, segment));
@@ -43,7 +43,7 @@ public class EnvelopeBuilder {
                 }
                 case "UNZ" -> {
                     if (currentHeader != null) {
-                        throw new ParseException("UNZ encountered before message was closed with UNT", "UNCLOSED_MESSAGE");
+                        throw new ParseException("UNZ encountered before message was closed with UNT", "UNCLOSED_MESSAGE", i + 1, null);
                     }
 
                     interchangeTrailer = segment;
@@ -52,7 +52,7 @@ public class EnvelopeBuilder {
                     if (currentHeader != null) {
                         currentSegments.add(segment);
                     } else {
-                        throw new ParseException("Segment " + segment.tag() + " encountered outside a message", "UNEXPECTED_END");
+                        throw new ParseException("Segment " + segment.tag() + " encountered outside a message", "UNEXPECTED_END", i + 1, null);
                     }
                 }
             }

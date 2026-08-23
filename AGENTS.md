@@ -72,6 +72,7 @@ existing class name rather than the doc when wiring exceptions.
 
 * `POST /parse`, `Content-Type: text/plain` (raw EDIFACT is the whole body), returns JSON.
 * Parsing is strict: malformed structure -> HTTP 400 with `{status, code, message, segmentIndex, elementIndex}`.
+* `segmentIndex` is 1-based (EDIFACT convention) and points at the offending segment. It is `null` when the failure is an absence rather than a bad segment (`EMPTY_INPUT`, `INVALID_UNA`, missing `UNT`, missing `UNZ`). `elementIndex` is currently always `null`.
 
 ## Testing
 

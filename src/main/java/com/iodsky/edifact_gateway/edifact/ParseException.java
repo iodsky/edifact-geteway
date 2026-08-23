@@ -7,10 +7,14 @@ public class ParseException extends RuntimeException {
     private final Integer elementIndex;
 
     public ParseException(String message, String code) {
+        this(message, code, null, null);
+    }
+
+    public ParseException(String message, String code, Integer segmentIndex, Integer elementIndex) {
         super(message);
         this.code = code;
-        this.segmentIndex = null;
-        this.elementIndex = null;
+        this.segmentIndex = segmentIndex;
+        this.elementIndex = elementIndex;
     }
 
     public String getCode() {
