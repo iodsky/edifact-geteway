@@ -1,3 +1,6 @@
 spring:
   application:
     name: edifact-gateway
+server:
+  servlet:
+    context-path: /api
